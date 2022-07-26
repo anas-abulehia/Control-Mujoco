@@ -11,23 +11,21 @@
 #include "string.h"
 
 //simulation end time
-double simend = 5;
-
-#define nv 2
+double simend = 15;
 
 //related to writing data to a file
 FILE *fid;
 int loop_index = 0;
-const int data_frequency = 50; //frequency at which data is written to a file
+const int data_frequency = 10; //frequency at which data is written to a file
 
 
-char xmlpath[] = "../myproject/dbpendulum/doublependulum.xml";
-char datapath[] = "../myproject/dbpendulum/data.csv";
+// char xmlpath[] = "../myproject/template_writeData/pendulum.xml";
+// char datapath[] = "../myproject/template_writeData/data.csv";
 
 
 //Change the path <template_writeData>
 //Change the xml file
-char path[] = "../myproject/dbpendulum/";
+char path[] = "../myproject/penddulum/";
 char xmlfile[] = "doublependulum.xml";
 
 
@@ -131,8 +129,7 @@ void init_save_data()
 {
   //write name of the variable here (header)
    fprintf(fid,"t, ");
-   fprintf(fid,"PE, KE, TE, ");
-   fprintf(fid,"q1, q2, ");
+   
 
    //Don't remove the newline
    fprintf(fid,"\n");
@@ -144,9 +141,10 @@ void save_data(const mjModel* m, mjData* d)
 {
   //data here should correspond to headers in init_save_data()
   //seperate data by a space %f followed by space
-  fprintf(fid,"%f, ",d->time);
-  fprintf(fid,"%f, %f, %f, ",d->energy[0],d->energy[1],d->energy[0]+d->energy[1]);
-  fprintf(fid,"%f, %f ",d->qpos[0],d->qpos[1]);
+  fprintf(fid,"%f ,",d->time);
+
+  fprintf(fid,"%f,%f",d->qpos[2],d->qpos[3]);
+
   //Don't remove the newline
   fprintf(fid,"\n");
 }
@@ -155,78 +153,143 @@ void save_data(const mjModel* m, mjData* d)
 void mycontroller(const mjModel* m, mjData* d)
 {
   //write control here
-  mj_energyPos(m,d);
-  mj_energyVel(m,d);
-  //printf("%f %f %f %f \n",d->time,d->energy[0],d->energy[1],d->energy[0]+d->energy[1]);
+mj_energyPos(m,d);
+mj_energyVel(m,d);
+// This deals with the mass matrix of the system 
+/* const int nv = 2;
+double dense_M[16] = {0};
+mj_fullM(m, dense_M, d->qM);
+double M[4][4] = {0};
+M[0][0]=dense_M[0];
+M[0][1]=dense_M[1];
+M[0][2]=dense_M[2];
+M[0][3]=dense_M[3];
 
-  //check equations
-  //M*qacc + qfrc_bias = qfrc_applied + ctrl
-  //M*qddot + f = qfrc_applied + ctrl
-  //const int nv = 2;
-  double dense_M[nv*nv] = {0};
-  mj_fullM(m,dense_M, d->qM);
-  double M[nv][nv]={0};
-  M[0][0] = dense_M[0];
-  M[0][1] = dense_M[1];
-  M[1][0] = dense_M[2];
-  M[1][1] = dense_M[3];
-  // printf("%f %f \n",M[0][0],M[0][1]);
-  // printf("%f %f \n",M[1][0],M[1][1]);
-  // printf("******** \n");
+M[1][0]=dense_M[4];
+M[1][1]=dense_M[5];
+M[1][2]=dense_M[6];
+M[1][3]=dense_M[7];
 
-  double qddot[nv]={0};
-  qddot[0]=d->qacc[0];
-  qddot[1]=d->qacc[1];
+M[2][0]=dense_M[8];
+M[2][1]=dense_M[9];
+M[2][2]=dense_M[10];
+M[2][3]=dense_M[11];
 
-  double f[nv]={0};
-  f[0] = d->qfrc_bias[0];
-  f[1] = d->qfrc_bias[1];
+M[3][0]=dense_M[12];
+M[3][1]=dense_M[13];
+M[3][2]=dense_M[14];
+M[3][3]=dense_M[15];
+printf("\n%f	%f	 %f	%f   %f\n",d->time,M[0][0],M[0][1],M[0][2],M[0][3]);
+printf("\n%f	%f	 %f	%f   %f\n",d->time,M[1][0],M[1][1],M[1][2],M[1][3]);
+printf("\n%f	%f	 %f	%f   %f\n",d->time,M[2][0],M[2][1],M[2][2],M[2][3]);
+printf("\n%f	%f	 %f	%f   %f\n*********************",d->time,M[3][0],M[3][1],M[3][2],M[3][3]);  */
+//printf("**********************\n",d->time,M[0][0],M[0][1],M[1][0],M[1][1]);
+//printf("%f  %f   %f \n",m->body_inertia[6],m->body_inertia[7],m->body_inertia[8]);
+//printf("%d\n",m->nq);//get the number of qs 
+//
+/* mj_inverse(m,d);
+printf("%f  %f  %f   %f\n",d-> qfrc_inverse[0],d-> qfrc_inverse[1],d-> qfrc_inverse[2],d-> qfrc_inverse[3]); */
 
-  double lhs[nv]={0};
-  mju_mulMatVec(lhs,dense_M,qddot,2,2); //lhs = M*qddot
-  lhs[0] = lhs[0] + f[0]; //lhs = M*qddot + f
-  lhs[1] = lhs[1] + f[1];
-
-  d->qfrc_applied[0] = 0.1*f[0];
-  d->qfrc_applied[1] = 0.5*f[1];
-
-  double rhs[nv]={0};
-  rhs[0] = d->qfrc_applied[0];
-  rhs[1] = d->qfrc_applied[1];
-
-  // printf("%f %f \n",lhs[0], rhs[0]);
-  // printf("%f %f \n",lhs[1], rhs[1]);
-  // printf("******\n");
-
-  //control
-  double Kp1 = 100, Kp2 = 100;
-  double Kv1 = 10, Kv2 = 10;
-  double qref1 = -0.5, qref2 = -1.6;
-
-  //PD control
-  // d->qfrc_applied[0] = -Kp1*(d->qpos[0]-qref1)-Kv1*d->qvel[0];
-  // d->qfrc_applied[1] = -Kp2*(d->qpos[1]-qref2)-Kv2*d->qvel[1];
-
-  //coriolis + gravity + PD control
-  // d->qfrc_applied[0] = f[0]-Kp1*(d->qpos[0]-qref1)-Kv1*d->qvel[0];
-  // d->qfrc_applied[1] = f[1]-Kp2*(d->qpos[1]-qref2)-Kv2*d->qvel[1];
-
-  //Feedback linearization
-  //M*(-kp( ... ) - kv(...) + f)
-  double tau[2]={0};
-  tau[0]=-Kp1*(d->qpos[0]-qref1)-Kv1*d->qvel[0];
-  tau[1]=-Kp2*(d->qpos[1]-qref2)-Kv2*d->qvel[1];
-
-  mju_mulMatVec(tau,dense_M,tau,2,2); //lhs = M*tau
-  tau[0] += f[0];
-  tau[1] += f[1];
-    d->qfrc_applied[0] = tau[0];
-    d->qfrc_applied[1] = tau[1];
+/* mj_fwdPosition(m, d);
+mj_comPos(m,d);
+double Cen[3][6] = {0};
+Cen[0][0] = d->cdof[12];
+Cen[0][1] = d->cdof[13];
+Cen[0][2] = d->cdof[14];
+Cen[0][3] = d->cdof[15];
+Cen[0][4] = d->cdof[16];
+Cen[0][5] = d->cdof[17];
+printf("%f  %f %f %f  %f %f \n",Cen[0][0] ,Cen[0][1] ,Cen[0][2] ,Cen[0][3] ,Cen[0][4] ,Cen[0][5] ); */
 
 
+//get the states of the system
+//printf(" positions %f   %f  %f %f %f \n",d->time,d->qpos[0],d->qpos[1],d->qpos[2],d->qpos[3],d->qpos[3]);
+//printf(" velocities %f   %f  %f %f %f \n",d->time,d->qpos[0],d->qpos[1],d->qpos[2],d->qpos[3],d->qpos[3]);
+//printf("%f %f %f \n%f %f %f \n%**********************\n",m->body_inertia[3],m->body_inertia[4],m->body_inertia[5],m->body_mass[6],m->body_mass[7],m->body_mass[8]);
+
+//Control The robot when theta1 and theat2 are zeros 
+//Kx 
+//0                          ,1,2                            ,3,                 
+//double k1x = 31.6228*d->qpos[0]+0+78.6222*d->qpos[2]+ 0 + 40.8058*d->qpos[4]+0.0000 +   1.7148 * d->qpos[6] +0*d->qpos[7];
+//double k2x = 0*d->qpos[0]+31.6228*d->qpos[1]+0*d->qpos[2]+ -107.7085 *d->qpos[3]+ 0*d->qpos[4]+ 43.0392*d->qpos[5]+   0* d->qpos[6] +-13.0516*d->qpos[7];
+double x = d->qpos[0];
+double y = d->qpos[1];
+double theta1 = d->qpos[2];
+double theta2 = d->qpos[3];
+//
+double xdot = d->qvel[0];
+double ydot = d->qvel[1];
+double theta1dot = d->qvel[2];
+double theta2dot = d->qvel[3];
+
+double k1x = 31.6228*x+0+78.6222*theta1+ 0 + 40.8058*xdot +0.0000 +   1.7148 * theta1dot +0*theta2dot;
+double k2x = 0*x+31.6228*y+0*theta1+ -107.7085 *theta2+ 0*xdot+ 43.0392*ydot+   0*theta1dot+-13.0516*theta2dot;
+//double k1x = 31.6228*d->qpos[0]+0+78.6222*d->qpos[2]+ 0 + 40.8058*d->qpos[4]+0.0000 +   1.7148 * d->qvel[6] +0*d->qpos[7];
+//double k2x = 0*d->qpos[0]+31.6228*d->qpos[1]+0*d->qpos[2]+ -107.7085 *d->qpos[3]+ 0*d->qpos[4]+ 43.0392*d->qpos[5]+   0* d->qpos[6] +-13.0516*d->qpos[7];
+//double k1x  =  14.142135623731*d->qpos[0] + 28.8427997853313*d->qpos[3] + 18.8114452251434*d->qvel[0] +1.18596249141894*d->qvel[3]; 
+//double k2x  =  14.142135623731*d->qpos[1] + -42.330533 *d->qpos[4] +19.818133 *d->qvel[1]  + -7.0204 *d->qvel[4] ;
 
 
 
+double qref_0 = 0;
+double qref_1 = 0;
+
+
+double e1 = qref_0-k1x;
+double e2 = qref_1-k2x;
+
+double force_max = 80;
+
+if(e1>force_max){
+	e1 = force_max;
+}
+if(e1<-force_max){
+	e1 = -force_max;
+}
+
+
+if(e2>force_max){
+	e2 = force_max;
+}
+if(e2<-force_max){
+	e2 = -force_max;
+}
+
+d->qfrc_applied[0] = e1;
+d->qfrc_applied[1] = e2;
+//printf(" positions %f [s]  %f  %f %f %f %f  %d \n",d->time,d->qpos[0],d->qpos[1],d->qpos[2],d->qpos[3],d->qpos[4],m->nq);
+//printf(" velocities %f [s]  %f  %f %f %f %f\n",d->time,d->qvel[0],d->qvel[1],d->qvel[2],d->qvel[3],d->qvel[4]);
+//double qref_0  = .1*mjPI;
+//double qref_1 =  .2*mjPI;
+
+//1.0000 0.0000 -56.6959 0.0000 -2.7495 0.0000 -8.8824 -0.0000
+//-0.0000 1.0000 0.0000 0.7521 -0.0000 2.4806 -0.0000 0.5268
+/* double k1x = 1*d->qpos[0]+0*d->qpos[1]+-56.6959*d->qpos[2]+ 0.0 *d->qpos[3]+ -2.7495*d->qpos[4]+0.0000*d->qpos[5]+   -8.8824* d->qpos[6] +-0.0000*d->qpos[7];
+//double k2x = 0*d->qpos[0]+1*d->qpos[1]+0*d->qpos[2]+ 0.7521*d->qpos[3]+ 0*d->qpos[4]+ 2.4806*d->qpos[5]+   0* d->qpos[6] +0.5268*d->qpos[7];
+
+
+double e1 = qref_0-k1x;
+double e2 = qref_1-k2x;
+
+double force_max = 80;
+
+if(e1>force_max){
+	e1 = force_max;
+}
+if(e1<=-force_max){
+	e1 = -force_max;
+}
+
+
+if(e2>=force_max){
+	e2 = force_max;
+}
+if(e2<-force_max){
+	e2 = -force_max;
+}
+d->qfrc_applied[0] = e1;
+d->qfrc_applied[1] = e2; */
+//printf("Control Signals are %f [n]    %f [n]\n",e1,e2);
 
   //write data here (dont change/dete this function call; instead write what you need to save in save_data)
   if ( loop_index%data_frequency==0)
@@ -245,14 +308,14 @@ int main(int argc, const char** argv)
     // activate software
     mj_activate("mjkey.txt");
 
-    // char xmlpath[100]={};
-    // char datapath[100]={};
-    //
-    // strcat(xmlpath,path);
-    // strcat(xmlpath,xmlfile);
-    //
-    // strcat(datapath,path);
-    // strcat(datapath,datafile);
+    char xmlpath[100]={};
+    char datapath[100]={};
+
+    strcat(xmlpath,path);
+    strcat(xmlpath,xmlfile);
+
+    strcat(datapath,path);
+    strcat(datapath,datafile);
 
 
     // load and compile model
@@ -297,7 +360,7 @@ int main(int argc, const char** argv)
     glfwSetMouseButtonCallback(window, mouse_button);
     glfwSetScrollCallback(window, scroll);
 
-    double arr_view[] = {89.608063, -11.588379, 5, 0.000000, 0.000000, 2.000000};
+    double arr_view[] = {89.608063, -11.588379, 5, 0.000000, 0.000000, 1.000000};
     cam.azimuth = arr_view[0];
     cam.elevation = arr_view[1];
     cam.distance = arr_view[2];
@@ -310,9 +373,11 @@ int main(int argc, const char** argv)
 
     fid = fopen(datapath,"w");
     init_save_data();
-
-    d->qpos[0] = 0.5;
-    //d->qpos[1] = 0;
+	d->qpos[0] =  0;//0.0555555556*10;x
+	d->qpos[1] = 0;// 0.0555555556*10;y
+	d->qpos[2]  = .5;//theta1
+	d->qpos[3] = 1;//theta 2
+	
     // use the first while condition if you want to simulate for a period.
     while( !glfwWindowShouldClose(window))
     {
