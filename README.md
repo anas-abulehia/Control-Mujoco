@@ -21,7 +21,7 @@ The details of modelling and equation of motion are found in the [[file]](https:
 12) Write the control law and apply the control inputs to the system via mjModel data structure https://github.com/anas-abulehia/Control-Mujoco/blob/9a9df879b5cf2647c45fcc34346e0f10e3e428c4/main.c#L225-L226 
 https://github.com/anas-abulehia/Control-Mujoco/blob/9a9df879b5cf2647c45fcc34346e0f10e3e428c4/main.c#L258-L259
 
-The reponse of the controlled system is [here](https://www.youtube.com/watch?v=ygOSoOh8YXE)
+The response of the controlled system is [here](https://www.youtube.com/watch?v=ygOSoOh8YXE)
 ### Conculsion 
 I have decided to work on Mujoco since it has been released and became open source project. The software shows an excellent performance in comparison to other  simulators [[1]](https://leggedrobotics.github.io/SimBenchmark/). The documentation was pretty clear and from convenience point of view, it is better than Matlab Simscape. In control design and mechanical dynamics simulation, it shows perfect results and I recommend it to be used in early development of projects, and it offers to add complexities such as sensor noises. It is perfect for teaching control and sure I will work on non-classical control problems  RL as a learning platform. The DeepMind team was very responsive and clear. All in all, the experience was very positive. 
 At the end I would like to thank Dr Pranav Bhounsule [[2]](https://pab47.github.io/mujoco.html) for the nice tutorial which I found my way to Mujoco through it, indeed the C code and Makefile are downloaded from the course and modified for my project. 
