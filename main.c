@@ -222,8 +222,8 @@ double ydot = d->qvel[1];
 double theta1dot = d->qvel[2];
 double theta2dot = d->qvel[3];
 
-double k1x = 31.6228*x+0+78.6222*theta1+ 0 + 40.8058*xdot +0.0000 +   1.7148 * theta1dot +0*theta2dot;
-double k2x = 0*x+31.6228*y+0*theta1+ -107.7085 *theta2+ 0*xdot+ 43.0392*ydot+   0*theta1dot+-13.0516*theta2dot;
+double k1x = 20*x+0+45.24*theta1+ 0 + 26.162*xdot +0.0000 +   1.448 * theta1dot +0*theta2dot;
+double k2x = 0*x+19.9999*y+0*theta1+ -64.1 *theta2+ 0*xdot+ 27.5927*ydot+   0*theta1dot+-9.13231*theta2dot;
 //double k1x = 31.6228*d->qpos[0]+0+78.6222*d->qpos[2]+ 0 + 40.8058*d->qpos[4]+0.0000 +   1.7148 * d->qvel[6] +0*d->qpos[7];
 //double k2x = 0*d->qpos[0]+31.6228*d->qpos[1]+0*d->qpos[2]+ -107.7085 *d->qpos[3]+ 0*d->qpos[4]+ 43.0392*d->qpos[5]+   0* d->qpos[6] +-13.0516*d->qpos[7];
 //double k1x  =  14.142135623731*d->qpos[0] + 28.8427997853313*d->qpos[3] + 18.8114452251434*d->qvel[0] +1.18596249141894*d->qvel[3]; 
@@ -238,7 +238,7 @@ double qref_1 = 0;
 double e1 = qref_0-k1x;
 double e2 = qref_1-k2x;
 
-double force_max = 80;
+double force_max = 20;
 
 if(e1>force_max){
 	e1 = force_max;
